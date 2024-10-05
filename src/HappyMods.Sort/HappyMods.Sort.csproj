@@ -10,8 +10,33 @@
       <ProjectReference Include="..\HappyMods.Core\HappyMods.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="modmanifest.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-      <Exec Command="set deployDir=&quot;C:\Program Files (x86)\Steam\steamapps\workshop\content\2059170\3342973875\&quot;&#xA;&#xA;xcopy /f /y $(TargetDir)* %25deployDir%25" />
+      <Exec Command="set deployDir=&quot;C:\Program Files (x86)\Steam\steamapps\workshop\content\2059170\3342973875\&quot;&#xA;&#xA;xcopy /f /y &quot;C:\Users\jacob\.nuget\packages\netstandard.library\2.0.3\build\netstandard2.0\ref\*.dll&quot; $(TargetDir)&#xA;xcopy /f /y $(TargetDir)*.dll %25deployDir%25&#xA;xcopy /f /y $(TargetDir)modmanifest.json %25deployDir%25&#xA;" />
     </Target>
+
+    <ItemGroup>
+        <Reference Include="Assembly-CSharp">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Quasimorph\Quasimorph_Data\Managed\Assembly-CSharp.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Quasimorph\Quasimorph_Data\Managed\UnityEngine.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Quasimorph\Quasimorph_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+        </Reference>
+        <Reference Include="UnityEngine.InputLegacyModule">
+            <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Quasimorph\Quasimorph_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    </ItemGroup>
 
 </Project>
