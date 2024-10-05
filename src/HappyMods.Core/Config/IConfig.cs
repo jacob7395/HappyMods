@@ -1,5 +1,6 @@
-namespace HappyMods.Sort.Config;
+namespace HappyMods.Core.Config;
 
 public interface IConfig
 {
+    public string FileName { get; }
 }

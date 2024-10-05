@@ -1,4 +1,5 @@
 using HappyMods.Core.Config;
+using HappyMods.Core.Unity;
 
 namespace HappyMods.Tests;
 

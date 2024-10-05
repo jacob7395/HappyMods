@@ -1,53 +1,46 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using HappyMods.Sort.Config;
-using MGSC;
-using NodaTime;
+using HappyMods.Core.Unity;
 using UnityEngine;
 
 namespace HappyMods.Core.Config;
 
-public interface IUnityConstants
+public class PersistenceFolder(string persistenceFolderName, IUnityConstants unityConstants)
 {
-    public string PersistentDataPath { get; }
-}
-
-public record UnityConstants : IUnityConstants
-{
-    public string PersistentDataPath => Application.persistentDataPath;
+    public string PersistenceFolderName => ConfigPath;
+    public string ConfigPath => Path.Combine(unityConstants.PersistentDataPath, persistenceFolderName);
 }
 
 public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory defaultFactory, IUnityConstants unityConstants)
 {
     public string PersistenceFolderName => ConfigPath;
-    private string ConfigPath => Path.Combine(unityConstants.PersistentDataPath, persistenceFolderName);
+    protected string ConfigPath => Path.Combine(unityConstants.PersistentDataPath, persistenceFolderName);
 
-    private readonly ConcurrentDictionary<string, ConfigLifeTime> _configCache = new();
+    protected readonly ConcurrentDictionary<string, ConfigLifeTime> _configCache = new();
 
-    private class ConfigLifeTime(IConfig config)
+    protected class ConfigLifeTime(IConfig config)
     {
         public IConfig Config { get; private set; } = config;
-        public Instant LastUpdated { get; private set; } = SystemClock.Instance.GetCurrentInstant();
+        public DateTime LastUpdated { get; private set; } = DateTime.UtcNow;
 
         public void UpdateConfig(IConfig config)
         {
             Config = config;
-            LastUpdated = SystemClock.Instance.GetCurrentInstant();
+            LastUpdated = DateTime.UtcNow;
         }
     }
 
-    private string GetFilePath(string fileName) => Path.Combine(ConfigPath, $"{fileName}.json");
+    protected string GetFilePath(string fileName) => Path.Combine(ConfigPath, $"{fileName}.json");
 
-    public T? GetConfig<T>(string fileName) where T : class, IConfig
+    public T? GetConfig<T>() where T : class, IConfig
     {
         if (_configCache.TryGetValue(fileName, out var config) &&
             config is {} match &&
             match.Config is T matchConfig)
         {
-            if (match.LastUpdated <= Instant.MinValue)
+            if (match.LastUpdated <= DateTime.MinValue)
             {
                 // refresh config
             }
@@ -55,7 +48,7 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
             return matchConfig;
         }
 
-        var filePath = GetFilePath(fileName);
+        String filePath = GetFilePath(fileName);
 
         if (LoadConfig<T>(filePath) is {} existingFileConfig)
         {
@@ -70,16 +63,21 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
         return CreateAndWriteConfig<T>(fileName, filePath);
     }
 
-    private T? CreateAndWriteConfig<T>(string fileName, string filePath) where T : class, IConfig
+    protected T? CreateAndWriteConfig<T>(string fileName, string filePath) where T : class, IConfig
     {
-        if (defaultFactory.CreateDefault<T>() is not {} newConfig) return default;
+        if (defaultFactory.CreateDefault<T>() is not {} newConfig)
+        {
+            Debug.LogError($"Failed to create defaults for type {typeof(T)}");
+            return default;
+        }
+        
         WriteConfig(newConfig, filePath);
         _configCache[fileName] = new(newConfig);
 
         return newConfig;
     }
 
-    public T? LoadConfig<T>(string filePath) where T : class, IConfig
+    protected T? LoadConfig<T>(string filePath) where T : class, IConfig
     {
         if (!File.Exists(filePath))
         {
@@ -90,7 +88,7 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
         return JsonSerializer.Deserialize<T>(json);
     }
 
-    private void WriteConfig<T>(T config, String filePath) where T : class, IConfig
+    protected void WriteConfig<T>(T config, String filePath) where T : class, IConfig
     {
         String json = JsonSerializer.Serialize(config, new JsonSerializerOptions
         {

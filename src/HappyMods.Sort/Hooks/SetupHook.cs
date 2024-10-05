@@ -1,27 +1,39 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using HappyMods.Core.Config;
+using HappyMods.Core.DataTools;
+using HappyMods.Core.Unity;
 using HappyMods.Sort.Config;
 using HarmonyLib;
 
 namespace HappyMods.Sort.Hooks;
 
 [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
-public static class AfterConfigsLoaded
+public static class SetupHook
 {
     public const string ModName = "Happy.Sort";
-    public static readonly ConfigFactory ConfigFactory = new(ModName, 
-            new SortConfigDefaultFactory(), 
-            new UnityConstants());
+    public static readonly ConfigFactory ConfigFactory;
+    public static readonly MgscDataTools MgscDataTools;
+
+    static SetupHook()
+    {
+        var unityConstants = new UnityConstants();
+        var sortConfigDefaultFactory = new SortConfigDefaultFactory();
+
+        ConfigFactory = new(ModName, sortConfigDefaultFactory, unityConstants);
+        MgscDataTools = new(ModName, unityConstants);
+    }
     
     [Hook(ModHookType.AfterConfigsLoaded)]
-    public static void Execute(IModContext context)
+    public static void AfterConfigLoaded(IModContext context)
     {
         Debug.Log("Happy.Sort initialising");
 
         try
         {
-            var config = ConfigFactory.LoadConfig<SortConfig>("SortConfig");
+            ConfigFactory.GetConfig<SortConfig>("SortConfig");
+            ConfigFactory.GetConfig<SortItemTabMappingConfig>("SortItemTab");
+            MgscDataTools.ExportItemRecords();
             
             Harmony harmony = new("Happy.Sort");
             

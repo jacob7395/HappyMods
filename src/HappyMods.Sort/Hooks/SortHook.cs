@@ -1,9 +1,9 @@
 ﻿namespace HappyMods.Sort.Hooks;
 
-public class SpaceUpdatedGameLoop
+public class SortHook
 {
     [Hook(ModHookType.SpaceUpdateAfterGameLoop)]
-    public static void Execute(IModContext context)
+    public static void SpaceUpdateAfterGameLoop(IModContext context)
     {
         Debug.Log("Happy.Sort initialising");
         
