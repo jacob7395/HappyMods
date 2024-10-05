@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latestmajor</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\HappyMods.Core\HappyMods.Core.csproj" />
+    </ItemGroup>
+
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+      <Exec Command="set deployDir=&quot;C:\Program Files (x86)\Steam\steamapps\workshop\content\2059170\3342973875\&quot;&#xA;&#xA;xcopy /f /y $(TargetDir)* %25deployDir%25" />
+    </Target>
+
+</Project>

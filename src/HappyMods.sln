@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HappyMods.Core", "HappyMods.Core\HappyMods.Core.csproj", "{1F9D4A58-6E38-4012-A2D6-B199B9B199BC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HappyMods.Sort", "HappyMods.Sort\HappyMods.Sort.csproj", "{BB42B737-B86C-474B-826A-D3BED8466179}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1F9D4A58-6E38-4012-A2D6-B199B9B199BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F9D4A58-6E38-4012-A2D6-B199B9B199BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F9D4A58-6E38-4012-A2D6-B199B9B199BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F9D4A58-6E38-4012-A2D6-B199B9B199BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BB42B737-B86C-474B-826A-D3BED8466179}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB42B737-B86C-474B-826A-D3BED8466179}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB42B737-B86C-474B-826A-D3BED8466179}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB42B737-B86C-474B-826A-D3BED8466179}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
