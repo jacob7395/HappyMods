@@ -31,8 +31,6 @@ public static class SetupHook
 
         try
         {
-            ConfigFactory.GetConfig<SortConfig>("SortConfig");
-            ConfigFactory.GetConfig<SortItemTabMappingConfig>("SortItemTab");
             MgscDataTools.ExportItemRecords();
             
             Harmony harmony = new("Happy.Sort");

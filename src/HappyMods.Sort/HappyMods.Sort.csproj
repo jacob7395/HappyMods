@@ -6,6 +6,15 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <Target Name="CopyOutput" AfterTargets="Build">
+        <ItemGroup>
+            <MockFile Include="$(OutDir)*.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="@(MockFile)"
+              DestinationFolder="\home\happynips\.var\app\com.valvesoftware.Steam\.local\share\Steam\steamapps\workshop\content\2059170\3342973875\"
+              SkipUnchangedFiles="true" />
+    </Target>
+    
     <ItemGroup>
       <ProjectReference Include="..\HappyMods.Core\HappyMods.Core.csproj" />
     </ItemGroup>
@@ -16,9 +25,9 @@
       </None>
     </ItemGroup>
 
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-      <Exec Command="set deployDir=&quot;C:\Program Files (x86)\Steam\steamapps\workshop\content\2059170\3342973875\&quot;&#xA;&#xA;# xcopy /f /y C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\*.dll $(TargetDir)&#xA;xcopy /f /y $(TargetDir)*.dll %25deployDir%25&#xA;xcopy /f /y $(TargetDir)modmanifest.json %25deployDir%25&#xA;" />
-    </Target>
+    <ItemGroup>
+      <PackageReference Include="Lib.Harmony" Version="2.3.3" />
+    </ItemGroup>
 
     <ItemGroup>
         <Reference Include="Assembly-CSharp">
@@ -33,10 +42,6 @@
         <Reference Include="UnityEngine.InputLegacyModule">
             <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Quasimorph\Quasimorph_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
         </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="Lib.Harmony" Version="2.3.3" />
     </ItemGroup>
 
 </Project>

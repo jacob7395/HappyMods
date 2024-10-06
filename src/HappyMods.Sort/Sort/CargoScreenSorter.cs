@@ -5,11 +5,11 @@ using HappyMods.Sort.Config;
 
 namespace HappyMods.Sort.Sort;
 
-public class CargoScreenSorter(ConfigFactory ConfigFactory)
+public class CargoScreenSorter(ConfigFactory configFactory)
 {
-    private static void Sort(MagnumCargo magnumCargo, ItemStorage activeTab, SpaceTime spaceTime)
+    private void Sort(MagnumCargo magnumCargo, ItemStorage activeTab, SpaceTime spaceTime)
     {
-        var tabMapping = ConfigFactory.GetConfig<SortItemTabMappingConfig>();
+        SortItemTabMappingConfig? tabMappings = configFactory.GetConfig<SortItemTabMappingConfig>();
 
         List<ItemStorage> shipStorages = magnumCargo.ShipCargo.ToList();
 
@@ -20,13 +20,13 @@ public class CargoScreenSorter(ConfigFactory ConfigFactory)
             ItemStorage? cargo = magnumCargo.ShipCargo[cargoIndex];
             foreach (var item in cargo.Items.ToList())
             {
-                if (tabMappings.FirstOrDefault(x => x.ItemMatch.Matches(item)) is not {} matchedRule)
+                if (tabMappings?.TabMaps.Match(item) is not {} matchTab)
                 {
                     Debug.Log($"Item {item.Id} not found in config");
                     continue;
                 }
 
-                var targetTabIndex = matchedRule.TabNumber - 1;
+                var targetTabIndex = matchTab - 1;
 
                 if (targetTabIndex == cargoIndex) continue;
 
@@ -48,19 +48,22 @@ public class CargoScreenSorter(ConfigFactory ConfigFactory)
         }
     }
 
-    public static void Test()
+    public void Test()
     {
         
     }
     
-    public static void ProcessSortLoop(ScreenWithShipCargo instance, MagnumCargo magnumCargo, State state)
+    public void ProcessSortLoop(ScreenWithShipCargo instance, MagnumCargo magnumCargo, State state)
     {
-        if (!instance.gameObject.activeSelf || SharedUi.ManageSkullWindow.IsViewActive || SharedUi.NarrativeTextScreen.IsViewActive)
+        if (!instance.gameObject.activeSelf || 
+            SharedUi.ManageSkullWindow.IsViewActive || 
+            SharedUi.NarrativeTextScreen.IsViewActive)
         {
             return;
         }
 
-        if (state.Get<SpaceTime>() is not { } spaceTime) return;
+        if (state.Get<SpaceTime>() is not { } spaceTime ||
+            configFactory.GetConfig<SortConfig>() is not {} config) return;
 
         if (Input.GetKeyUp(KeyCode.P))
         {
@@ -70,7 +73,7 @@ public class CargoScreenSorter(ConfigFactory ConfigFactory)
             instance.RefreshView();
         }
 
-        if (Input.GetKeyUp(AfterConfigsLoaded.Config.TabSortKey))
+        if (Input.GetKeyUp(config.TabSortKey))
         {
             Debug.Log("[Happy.Sort] Handling cargo current tab");
             instance.GetActualFloorItems().SortWithExpandByTypeAndName(spaceTime);

@@ -25,10 +25,10 @@ public class ConfigFactoryTests
     public void GetConfig_WillReturnSortConfig_WhenNoFileExists()
     {
         // arrange
-        string fileName = SortConfig.FileName;
+        string fileName = new SortConfig().FileName;
         
         // act
-        var config = _factory.GetConfig<SortConfig>(fileName);
+        var config = _factory.GetConfig<SortConfig>();
 
         // assert
         config.Should().NotBeNull();
@@ -39,10 +39,10 @@ public class ConfigFactoryTests
     public void GetConfig_WillReturnSortItemTabMappingConfig_WhenNoFileExists()
     {
         // arrange
-        string fileName = SortItemTabMappingConfig.FileName;
+        string fileName = new SortItemTabMappingConfig().FileName;
         
         // act
-        var config = _factory.GetConfig<SortItemTabMappingConfig>(fileName);
+        var config = _factory.GetConfig<SortItemTabMappingConfig>();
 
         // assert
         config.Should().NotBeNull();
@@ -53,12 +53,12 @@ public class ConfigFactoryTests
     public void GetConfig_WillReturnSortConfig_WhenUpdated()
     {
         // arrange
-        string fileName = SortConfig.FileName;
-        _factory.GetConfig<SortConfig>(fileName);
+        string fileName = new SortItemTabMappingConfig().FileName;
+        _factory.GetConfig<SortItemTabMappingConfig>();
         var lastWriteTime = File.GetLastWriteTime(fileName);
         
         // act
-        var config = _factory.GetConfig<SortItemTabMappingConfig>(fileName);
+        var config = _factory.GetConfig<SortItemTabMappingConfig>();
 
         // assert
         config.Should().NotBeNull();
@@ -69,12 +69,12 @@ public class ConfigFactoryTests
     public void GetConfig_WillReturnSortItemTabMappingConfig_WhenUpdated()
     {
         // arrange
-        string fileName = SortConfig.FileName;
-        _factory.GetConfig<SortConfig>(fileName);
+        string fileName = new SortConfig().FileName;
+        _factory.GetConfig<SortConfig>();
         var lastWriteTime = File.GetLastWriteTime(fileName);
         
         // act
-        var config = _factory.GetConfig<SortConfig>(fileName);
+        var config = _factory.GetConfig<SortConfig>();
 
         // assert
         config.Should().NotBeNull();

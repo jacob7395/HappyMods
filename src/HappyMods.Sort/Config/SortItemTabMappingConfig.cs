@@ -1,14 +1,45 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Text.Json.Serialization;
 using HappyMods.Core.Config;
+using HappyMods.Core.DataTools;
 
 namespace HappyMods.Sort.Config;
+
+public static class BasePickupItemExtensions
+{
+    private static object _matchLock = new();
+    private static ConcurrentDictionary<string, TabMap> _matchCache = new();
+
+    public static Int32? Match(this TabMap[] tabMaps, BasePickupItem item)
+    {
+        if (_matchCache.TryGetValue(item.Id, out var match)) return match.TabNumber;
+
+        lock (_matchLock)
+        {
+            if (_matchCache.TryGetValue(item.Id, out var newMatch)) return newMatch.TabNumber;
+
+            if (tabMaps.FirstOrDefault(t => t.ItemMatch.Matches(item)) is not {} tabMap) return null;
+
+            _matchCache[item.Id] = tabMap;
+            return tabMap.TabNumber;
+        }
+    }
+}
 
 public record ItemTypeMatch(String Id, String RecordType, String SubType)
 {
     public string Id { get; } = Id;
     public string RecordType { get; } = RecordType;
     public string SubType { get; } = SubType;
+    public bool Matches(BasePickupItem item)
+    {
+        BasePickupItemRecord record = item.Record<BasePickupItemRecord>();
+        HappyItemRecord happyItemRecord = HappyItemRecord.FromItemRecord(record);
+        
+        return happyItemRecord.Id == Id || happyItemRecord.Name == RecordType || happyItemRecord.SubType == SubType;
+    }
 }
 
 public record SortItemTabMappingConfig() : IConfig

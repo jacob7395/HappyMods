@@ -18,7 +18,7 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
     public string PersistenceFolderName => ConfigPath;
     protected string ConfigPath => Path.Combine(unityConstants.PersistentDataPath, persistenceFolderName);
 
-    protected readonly ConcurrentDictionary<string, ConfigLifeTime> _configCache = new();
+    protected readonly ConcurrentDictionary<string, ConfigLifeTime> ConfigCache = new();
 
     protected class ConfigLifeTime(IConfig config)
     {
@@ -31,12 +31,19 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
             LastUpdated = DateTime.UtcNow;
         }
     }
-
     protected string GetFilePath(string fileName) => Path.Combine(ConfigPath, $"{fileName}.json");
 
     public T? GetConfig<T>() where T : class, IConfig
     {
-        if (_configCache.TryGetValue(fileName, out var config) &&
+        var fileName = defaultFactory.GetNameFileName<T>();
+
+        if (fileName is null)
+        {
+            Debug.LogError($"Failed to get file name for type {typeof(T).Name}");
+            return null;
+        }
+        
+        if (ConfigCache.TryGetValue(fileName, out var config) &&
             config is {} match &&
             match.Config is T matchConfig)
         {
@@ -52,13 +59,13 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
 
         if (LoadConfig<T>(filePath) is {} existingFileConfig)
         {
-            _configCache.TryAdd(fileName, new(existingFileConfig));
+            ConfigCache.TryAdd(fileName, new(existingFileConfig));
             return existingFileConfig;
         }
 
         if (defaultFactory.CreateDefault<T>() is not {} newConfig) return default;
         WriteConfig(newConfig, filePath);
-        _configCache[fileName] = new(newConfig);
+        ConfigCache[fileName] = new(newConfig);
 
         return CreateAndWriteConfig<T>(fileName, filePath);
     }
@@ -72,7 +79,7 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
         }
         
         WriteConfig(newConfig, filePath);
-        _configCache[fileName] = new(newConfig);
+        ConfigCache[fileName] = new(newConfig);
 
         return newConfig;
     }
