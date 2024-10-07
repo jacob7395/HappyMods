@@ -7,8 +7,6 @@ public static class SortHook
     [Hook(ModHookType.SpaceUpdateAfterGameLoop)]
     public static void SpaceUpdateAfterGameLoop(IModContext context)
     {
-        Debug.Log("Happy.Sort space hook bit");
-        
         if (context.State.Get<SpaceUI>()?.ArsenalScreen is { IsActive: true } arsenalScreen &&
             context.State.Get<MagnumCargo>() is {} magnumCargo)
         {

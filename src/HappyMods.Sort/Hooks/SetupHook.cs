@@ -30,7 +30,7 @@ public static class SetupHook
     [Hook(ModHookType.AfterConfigsLoaded)]
     public static void AfterConfigLoaded(IModContext context)
     {
-        Debug.Log("Happy.Sort initialising");
+        Debug.Log("[Happy.Sort] initialising");
 
         try
         {
@@ -52,7 +52,7 @@ public static class SetupHook
             return;
         }
         
-        Debug.Log("Happy.Sort initialised");
+        Debug.Log("[Happy.Sort] initialised");
     }
     
     private static void SafeHarmonyRegister<TMgsc>(Harmony harmony, string methodName)
