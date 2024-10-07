@@ -8,12 +8,14 @@
 
     <Target Name="CopyOutput" AfterTargets="Build">
         <ItemGroup>
-            <MockFile Include="$(OutDir)*.dll" />
+            <DllFiles Include="$(TargetDir)*.dll" />
+            <ManifestFile Include="modmanifest.json" />
         </ItemGroup>
-        <Copy SourceFiles="@(MockFile)"
-              DestinationFolder="\home\happynips\.var\app\com.valvesoftware.Steam\.local\share\Steam\steamapps\workshop\content\2059170\3342973875\"
-              SkipUnchangedFiles="true" />
+        <Copy SourceFiles="@(DllFiles);@(ManifestFile)"
+              DestinationFolder="C:\Program Files (x86)\Steam\steamapps\workshop\content\2059170\3342973875"
+              SkipUnchangedFiles="true"/>
     </Target>
+    
     
     <ItemGroup>
       <ProjectReference Include="..\HappyMods.Core\HappyMods.Core.csproj" />

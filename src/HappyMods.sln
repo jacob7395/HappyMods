@@ -9,10 +9,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{6A4E0761-7
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HappyMods.Tests", "HappyMods.Tests\HappyMods.Tests.csproj", "{F4A8A371-886A-46EC-AD9F-5E2B78DFBD37}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{87EBA022-B927-4368-9583-208162F501FA}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,12 +23,7 @@ Global
 		{BB42B737-B86C-474B-826A-D3BED8466179}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BB42B737-B86C-474B-826A-D3BED8466179}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BB42B737-B86C-474B-826A-D3BED8466179}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F4A8A371-886A-46EC-AD9F-5E2B78DFBD37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F4A8A371-886A-46EC-AD9F-5E2B78DFBD37}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F4A8A371-886A-46EC-AD9F-5E2B78DFBD37}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F4A8A371-886A-46EC-AD9F-5E2B78DFBD37}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{F4A8A371-886A-46EC-AD9F-5E2B78DFBD37} = {87EBA022-B927-4368-9583-208162F501FA}
 	EndGlobalSection
 EndGlobal

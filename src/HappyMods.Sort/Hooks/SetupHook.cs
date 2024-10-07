@@ -4,6 +4,7 @@ using HappyMods.Core.Config;
 using HappyMods.Core.DataTools;
 using HappyMods.Core.Unity;
 using HappyMods.Sort.Config;
+using HappyMods.Sort.Sort;
 using HarmonyLib;
 
 namespace HappyMods.Sort.Hooks;
@@ -14,6 +15,7 @@ public static class SetupHook
     public const string ModName = "Happy.Sort";
     public static readonly ConfigFactory ConfigFactory;
     public static readonly MgscDataTools MgscDataTools;
+    public static readonly CargoScreenSorter CargoScreenSorter;
 
     static SetupHook()
     {
@@ -22,6 +24,7 @@ public static class SetupHook
 
         ConfigFactory = new(ModName, sortConfigDefaultFactory, unityConstants);
         MgscDataTools = new(ModName, unityConstants);
+        CargoScreenSorter = new(ConfigFactory);
     }
     
     [Hook(ModHookType.AfterConfigsLoaded)]
