@@ -55,33 +55,24 @@ public class CargoScreenSorter(ConfigFactory configFactory)
     
     public void ProcessSortLoop(ScreenWithShipCargo instance, MagnumCargo magnumCargo, State state)
     {
-        Debug.Log("Happy.Sort process space loop");
-        
         if (!instance.gameObject.activeSelf || 
             SharedUi.ManageSkullWindow.IsViewActive || 
             SharedUi.NarrativeTextScreen.IsViewActive)
         {
             return;
         }
-
-        Debug.Log("Happy.Sort cargo active");
         
         if (state.Get<SpaceTime>() is not { } spaceTime ||
             configFactory.GetConfig<SortConfig>() is not {} config) return;
         
-        Debug.Log("Happy.Sort time and sort config retrived");
-        
         if (Input.GetKeyUp(KeyCode.P))
         {
-            Debug.Log("[Happy.Sort] Handling full cargo sort");
-
             Sort(magnumCargo, instance.GetActualFloorItems(), spaceTime);
             instance.RefreshView();
         }
 
         if (Input.GetKeyUp(config.TabSortKey))
         {
-            Debug.Log("[Happy.Sort] Handling cargo current tab");
             instance.GetActualFloorItems().SortWithExpandByTypeAndName(spaceTime);
             instance.RefreshView();
         }
