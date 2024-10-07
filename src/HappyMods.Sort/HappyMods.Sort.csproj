@@ -9,7 +9,7 @@
     <Target Name="CopyOutput" AfterTargets="Build">
         <ItemGroup>
             <DllFiles Include="$(TargetDir)*.dll" />
-            <ManifestFile Include="modmanifest.json" />
+            <ManifestFile Include="$(TargetDir)modmanifest.json" />
         </ItemGroup>
         <Copy SourceFiles="@(DllFiles);@(ManifestFile)"
               DestinationFolder="C:\Program Files (x86)\Steam\steamapps\workshop\content\2059170\3342973875"
