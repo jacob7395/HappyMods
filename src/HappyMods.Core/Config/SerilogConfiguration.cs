@@ -12,10 +12,10 @@ namespace HappyMods.Core.Config;
 
 public static class SerilogConfiguration
 {
-    public static Logger CreateLogger(UnityConstants unityConstants, string modPrefix)
+    public static Logger CreateLogger(IModConstants modConstant, string modPrefix)
     {
         return new LoggerConfiguration()
-                     .WriteTo.File(Path.Combine($"{unityConstants.PersistentDataPath}", $"Happy.{modPrefix}.{DateTime.Now}.log"),
+                     .WriteTo.File(Path.Combine($"{modConstant.PersistentDataPath}", $"Happy.{modPrefix}.{DateTime.Now}.log"),
                          outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
                      .WriteTo.UnitySink(modPrefix)
                      .CreateLogger();

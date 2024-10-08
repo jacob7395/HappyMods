@@ -7,35 +7,27 @@ using UnityEngine;
 
 namespace HappyMods.Core.Config;
 
-public class PersistenceFolder(string persistenceFolderName, IUnityConstants unityConstants)
+public class ConfigFactory(IConfigDefaultFactory defaultFactory, IModConstants modConstants)
 {
-    public string PersistenceFolderName => ConfigPath;
-    public string ConfigPath => Path.Combine(unityConstants.PersistentDataPath, persistenceFolderName);
-}
-
-public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory defaultFactory, IUnityConstants unityConstants)
-{
-    public string PersistenceFolderName => ConfigPath;
-    protected string ConfigPath => Path.Combine(unityConstants.PersistentDataPath, persistenceFolderName);
 
     protected readonly ConcurrentDictionary<string, ConfigLifeTime> ConfigCache = new();
 
-    protected class ConfigLifeTime(IConfig config)
+    protected class ConfigLifeTime(IConfig config, DateTime lastWriteTime)
     {
         public IConfig Config { get; private set; } = config;
-        public DateTime LastUpdated { get; private set; } = DateTime.UtcNow;
+        public DateTime LastUpdated { get; private set; } = lastWriteTime;
 
-        public void UpdateConfig(IConfig config)
+        public void UpdateConfig(IConfig config, DateTime lastWriteTime)
         {
             Config = config;
-            LastUpdated = DateTime.UtcNow;
+            LastUpdated = lastWriteTime;
         }
     }
-    protected string GetFilePath(string fileName) => Path.Combine(ConfigPath, $"{fileName}.json");
+    protected string GetFilePath(string fileName) => Path.Combine(modConstants.ModFolder, $"{fileName}.json");
 
     public T? GetConfig<T>() where T : class, IConfig
     {
-        var fileName = defaultFactory.GetNameFileName<T>();
+        string? fileName = defaultFactory.GetNameFileName<T>();
 
         if (fileName is null)
         {
@@ -55,17 +47,17 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
             return matchConfig;
         }
 
-        String filePath = GetFilePath(fileName);
+        string filePath = GetFilePath(fileName);
 
         if (LoadConfig<T>(filePath) is {} existingFileConfig)
         {
-            ConfigCache.TryAdd(fileName, new(existingFileConfig));
+            ConfigCache.TryAdd(fileName, new(existingFileConfig, File.GetLastWriteTime(fileName)));
             return existingFileConfig;
         }
 
         if (defaultFactory.CreateDefault<T>() is not {} newConfig) return default;
         WriteConfig(newConfig, filePath);
-        ConfigCache[fileName] = new(newConfig);
+        ConfigCache[fileName] = new(newConfig, File.GetLastWriteTime(fileName));
 
         return CreateAndWriteConfig<T>(fileName, filePath);
     }
@@ -79,7 +71,7 @@ public class ConfigFactory(string persistenceFolderName, IConfigDefaultFactory d
         }
         
         WriteConfig(newConfig, filePath);
-        ConfigCache[fileName] = new(newConfig);
+        ConfigCache[fileName] = new(newConfig, File.GetLastWriteTime(fileName));
 
         return newConfig;
     }

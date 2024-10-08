@@ -28,12 +28,10 @@ public record HappyItemRecord(String Id, String Name, String? SubType = null)
     }
 }
 
-public class MgscDataTools(string persistenceFolderName, IUnityConstants unityConstants)
+public class MgscDataTools(IModConstants modConstants, ILogger logger)
 {
     public const string ItemRecordFileName = "ItemDataExport.csv";
-    public string PersistenceFolderName => ConfigPath;
-    public string FilePath => Path.Combine(ConfigPath, ItemRecordFileName);
-    public string ConfigPath => Path.Combine(unityConstants.PersistentDataPath, persistenceFolderName);
+    public string FilePath => Path.Combine(modConstants.ModFolder, ItemRecordFileName);
     private object _dataLock = new();
     private HappyItemRecord[]? _itemRecords;
     
@@ -52,14 +50,17 @@ public class MgscDataTools(string persistenceFolderName, IUnityConstants unityCo
     
     public void ExportItemRecords()
     {
+        logger.Information("Exporting data records");
+        
         if (File.Exists(FilePath))
         {
+            logger.Information("File already existed deletings old file");
             File.Delete(FilePath);
         }
 
         if (Path.GetDirectoryName(FilePath) is not {} directoryName)
         {
-            Debug.LogError($"Unable to get directory path from file path `{FilePath}`");
+            logger.Error("Unable to get directory path from file path `{FilePath}`", FilePath);
             return;
         }
 

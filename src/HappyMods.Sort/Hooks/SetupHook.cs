@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using HappyMods.Core.Config;
 using HappyMods.Core.DataTools;
@@ -6,6 +7,8 @@ using HappyMods.Core.Unity;
 using HappyMods.Sort.Config;
 using HappyMods.Sort.Sort;
 using HarmonyLib;
+using Microsoft.Extensions.DependencyInjection;
+using Debug=UnityEngine.Debug;
 
 namespace HappyMods.Sort.Hooks;
 
@@ -13,53 +16,66 @@ namespace HappyMods.Sort.Hooks;
 public static class SetupHook
 {
     public const string ModName = "Happy.Sort";
-    public static readonly ConfigFactory ConfigFactory;
-    public static readonly MgscDataTools MgscDataTools;
-    public static readonly CargoScreenSorter CargoScreenSorter;
-
-    static SetupHook()
+    public static ServiceProvider Provider => ModServiceProvider.Provider;
+    
+    public static void ConfigureServiceProvider()
     {
-        var unityConstants = new UnityConstants();
-        var sortConfigDefaultFactory = new SortConfigDefaultFactory();
+        Debug.Log("[Happy.Sort] Creating service collection");
+        
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddSingleton<IModConstants, ModConstant>(_ => new(ModName));
+        serviceCollection.AddSingleton<IConfigDefaultFactory, SortConfigDefaultFactory>();
+        serviceCollection.AddSingleton<IConfigDefaultFactory, SortConfigDefaultFactory>();
+        serviceCollection.AddSingleton<MgscDataTools>();
+        serviceCollection.AddSingleton<CargoScreenSorter>();
+        serviceCollection.AddSingleton<ILogger>(s => SerilogConfiguration.CreateLogger(s.GetRequiredService<IModConstants>(), "Sort"));
 
-        ConfigFactory = new(ModName, sortConfigDefaultFactory, unityConstants);
-        MgscDataTools = new(ModName, unityConstants);
-        CargoScreenSorter = new(ConfigFactory);
+        ModServiceProvider.Provider = serviceCollection.BuildServiceProvider();
+        
+        Debug.Log("[Happy.Sort] Service collection created");
     }
     
     [Hook(ModHookType.AfterConfigsLoaded)]
     public static void AfterConfigLoaded(IModContext context)
     {
-        Debug.Log("[Happy.Sort] initialising");
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        
+        Debug.Log("[Happy.Sort] Initialising");
 
         try
         {
-            MgscDataTools.ExportItemRecords();
+            ConfigureServiceProvider();
             
-            Harmony harmony = new("Happy.Sort");
-            
-            SafeHarmonyRegister<AfterRaidScreen>(harmony, nameof(AfterRaidScreen.Process));
-            SafeHarmonyRegister<ArsenalScreen>(harmony, nameof(ArsenalScreen.Process));
-            SafeHarmonyRegister<FastTradeScreen>(harmony, nameof(FastTradeScreen.Process));
+            var logger = Provider.GetRequiredService<ILogger>();
+            Provider.GetRequiredService<IModConstants>();
+            Debug.Log("[Happy.Sort] Resolved mod constants");
+            Provider.GetRequiredService<MgscDataTools>().ExportItemRecords();
 
-            var state = context.State.Get<ArsenalScreen>();
-            Debug.Log((state is not null).ToString());
+            Harmony harmony = new("Happy.Sort");
+
+            SafeHarmonyRegister<AfterRaidScreen>(harmony, nameof(AfterRaidScreen.Process), logger);
+            SafeHarmonyRegister<ArsenalScreen>(harmony, nameof(ArsenalScreen.Process), logger);
+            SafeHarmonyRegister<FastTradeScreen>(harmony, nameof(FastTradeScreen.Process), logger);
         }
         catch (Exception e)
         {
-            Debug.Log("Happy.Sort threw error error during load");
+            Debug.Log("[Happy.Sort] Error thrown during load");
             Debug.LogError(e);
-            return;
         }
-        
-        Debug.Log("[Happy.Sort] initialised");
+        finally
+        {
+            stopwatch.Stop();
+            Debug.Log($"[Happy.Sort] Finish initialisation in {stopwatch.Elapsed}");
+        }
     }
     
-    private static void SafeHarmonyRegister<TMgsc>(Harmony harmony, string methodName)
+    private static void SafeHarmonyRegister<TMgsc>(Harmony harmony, string methodName, ILogger logger)
     {
 
         try
         {
+            logger.Information("Configuring harmony patch for {Name} with method {MethodName}", typeof(TMgsc).Name, methodName);
             // harmony.Patch(
             //         AccessTools.Method(typeof(Tmgsc), methodName),
             //         new(typeof(CargoScreenUtil), nameof(CargoScreenUtil.Test))
@@ -67,8 +83,7 @@ public static class SetupHook
         }
         catch (Exception e)
         {
-            Debug.Log($"Error thrown while trying to load {typeof(TMgsc).Name} and method {methodName}");
-            Debug.LogError(e);
+            logger.Error(e, "Error thrown while trying to load {Name} and method {MethodName}", typeof(TMgsc).Name, methodName);
         }
     }
 }

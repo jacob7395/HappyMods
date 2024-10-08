@@ -1,9 +1,14 @@
 ﻿using System;
+using HappyMods.Core.Unity;
+using HappyMods.Sort.Sort;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyMods.Sort.Hooks;
 
 public static class SortHook
 {
+    public static ServiceProvider Provider => ModServiceProvider.Provider;
+    
     [Hook(ModHookType.SpaceUpdateAfterGameLoop)]
     public static void SpaceUpdateAfterGameLoop(IModContext context)
     {
@@ -12,7 +17,8 @@ public static class SortHook
         {
             try
             {
-                SetupHook.CargoScreenSorter.ProcessSortLoop(arsenalScreen, magnumCargo, context.State);
+                Provider.GetRequiredService<CargoScreenSorter>()
+                        .ProcessSortLoop(arsenalScreen, magnumCargo, context.State);
             }
             catch (Exception e)
             {
