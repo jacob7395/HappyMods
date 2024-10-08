@@ -10,6 +10,7 @@ namespace HappyMods.Sort.Sort;
 public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
 {
     private ILogger _logger = logger.ForContext<CargoScreenSorter>();
+    public bool RecyclingTabAvaliabale(MagnumSpaceship spaceship) => spaceship.HasStoreConstructorDepartment;
     private void Sort(MagnumCargo magnumCargo, ItemStorage activeTab, SpaceTime spaceTime, 
                       bool sortRecycling)
     {
@@ -29,7 +30,7 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
         ItemStorage[] shipStorages = magnumCargo.ShipCargo.ToArray();
 
         int totalSortCount = 0;
-        HashSet<ItemStorage> ItemsChangedOn = new();
+        HashSet<ItemStorage> changedItemStorageTabs = new();
 
         foreach (var (tabIndex, itemStorage, item) in magnumCargo.ShipCargo
                                                                    .SelectMany((itemStorage, index) => 
@@ -40,7 +41,7 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
         {
             if (!SortTab(item, tabIndex, itemStorage, tabMappings, shipStorages)) { continue; }
             
-            ItemsChangedOn.Add(itemStorage);
+            changedItemStorageTabs.Add(itemStorage);
             totalSortCount++;
         }
 
@@ -56,7 +57,7 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
             }
         }
 
-        foreach (ItemStorage cargo in ItemsChangedOn)
+        foreach (ItemStorage cargo in changedItemStorageTabs)
         {
             cargo.SortWithExpandByTypeAndName(spaceTime);
 
@@ -128,6 +129,41 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
             _logger.Information("Processing sort");
             instance.GetActualFloorItems().SortWithExpandByTypeAndName(spaceTime);
             instance.RefreshView();
+        }
+    }
+
+    private ItemSlot? ItemPreviouslyUnderPointer;
+    private ItemSlot? SearchForItemUnderPointer(ScreenWithShipCargo screenWithShipCargo) => screenWithShipCargo._cargoItemGrid._slots.FirstOrDefault(s => s.IsPointerInside);
+    public void HandleUnderPointerHotKeys(ScreenWithShipCargo screenWithShipCargo, MagnumCargo magnumCargo, MagnumSpaceship magnumSpaceship)
+    {
+        
+        if (ItemPreviouslyUnderPointer?.IsPointerInside == false)
+        {
+            logger.Debug("Pointer no longer in item");
+            ItemPreviouslyUnderPointer = null;
+        }
+
+        ItemPreviouslyUnderPointer ??= SearchForItemUnderPointer(screenWithShipCargo);
+            
+        if (ItemPreviouslyUnderPointer is null) return;
+
+        bool recyclingTabAvaliabale = RecyclingTabAvaliabale(magnumSpaceship);
+        
+        logger.Debug("Pointer is in an item {RecyclingTabAvaliabale}", recyclingTabAvaliabale);
+        
+        if (Input.GetMouseButtonUp(2) && recyclingTabAvaliabale)
+        {
+            BasePickupItem item = ItemPreviouslyUnderPointer.Item;
+            
+            logger.Debug("Handeling move item to recycleing for {ItemId}", item.Id);
+            
+            if (!magnumCargo.RecyclingStorage.TryPutItem(item, CellPosition.Zero))
+            {
+                logger.Warning("Failed to add item to recycling tab");
+                return;
+            }
+            
+            screenWithShipCargo.RefreshView();
         }
     }
 }
