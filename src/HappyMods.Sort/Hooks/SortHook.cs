@@ -1,29 +1,34 @@
 ﻿using System;
-using HappyMods.Core.Unity;
+using HappyMods.Core.Config;
+using HappyMods.Core.UnitySupport;
 using HappyMods.Sort.Sort;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyMods.Sort.Hooks;
 
-public static class SortHook
+public class SortHook
 {
     public static ServiceProvider Provider => ModServiceProvider.Provider;
-    
+    private static ILogger? Logger { get; set; }
+    public static CargoScreenSorter? CargoScreenSorter;
+
     [Hook(ModHookType.SpaceUpdateAfterGameLoop)]
     public static void SpaceUpdateAfterGameLoop(IModContext context)
     {
+        Logger ??= Provider.GetRequiredService<ILogger>()
+                           .ForContext("SourceContext", nameof(SortHook));
+
         if (context.State.Get<SpaceUI>()?.ArsenalScreen is { IsActive: true } arsenalScreen &&
             context.State.Get<MagnumCargo>() is {} magnumCargo)
         {
             try
             {
-                Provider.GetRequiredService<CargoScreenSorter>()
-                        .ProcessSortLoop(arsenalScreen, magnumCargo, context.State);
+                CargoScreenSorter ??= Provider.GetRequiredService<CargoScreenSorter>();
+                CargoScreenSorter.ProcessSortLoop(arsenalScreen, magnumCargo, context.State);
             }
             catch (Exception e)
             {
-                Debug.Log("[Happy.Sort] Error thrown when trying to process sort loop");
-                Debug.LogError(e);
+                Logger.Error(e, "Error thrown when trying to process sort loop");
                 throw;
             }
         }

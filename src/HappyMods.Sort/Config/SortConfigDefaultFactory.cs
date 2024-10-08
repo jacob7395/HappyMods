@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using HappyMods.Core.Config;
+using HappyMods.Core.DataTools;
 using UnityEngine.PlayerLoop;
 
 namespace HappyMods.Sort.Config;
 
-public class SortConfigDefaultFactory : IConfigDefaultFactory
+public class SortConfigDefaultFactory(MgscDataTools mgscDataTools, ILogger logger) : IConfigDefaultFactory
 {
     public T? CreateDefault<T>() where T : class, IConfig
     {
-        // Now type switch expression in net standard :(
+        // Type switch expression in net standard :(
         if (typeof(T) == typeof(SortConfig))
         {
             return new SortConfig() as T;
@@ -17,7 +18,7 @@ public class SortConfigDefaultFactory : IConfigDefaultFactory
 
         if (typeof(T) == typeof(SortItemTabMappingConfig))
         {
-            return SortItemTabMappingConfig.Default() as T;
+            return SortItemTabMappingConfig.Default(mgscDataTools, logger) as T;
         }
 
         return null;

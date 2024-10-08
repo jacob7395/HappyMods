@@ -3,16 +3,16 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using CsvHelper;
-using HappyMods.Core.Unity;
+using HappyMods.Core.UnitySupport;
 using MGSC;
 using UnityEngine;
 
 namespace HappyMods.Core.DataTools;
 
-public record HappyItemRecord(String Id, String Name, String? SubType = null)
+public record HappyItemRecord(string Id, string Type, string? SubType = null)
 {
     public string Id { get; } = Id;
-    public string Name  { get; } = Name;
+    public string Type  { get; } = Type;
     public string? SubType  { get; } = SubType;
 
     public static HappyItemRecord FromItemRecord(BasePickupItemRecord itemRecord)
@@ -32,17 +32,27 @@ public class MgscDataTools(IModConstants modConstants, ILogger logger)
 {
     public const string ItemRecordFileName = "ItemDataExport.csv";
     public string FilePath => Path.Combine(modConstants.ModFolder, ItemRecordFileName);
-    private object _dataLock = new();
+    private readonly object _dataLock = new();
     private HappyItemRecord[]? _itemRecords;
-    
+    private readonly ILogger _logger = logger.ForContext<MgscDataTools>();
+
     public HappyItemRecord[] GetItemRecords()
     {
-        if (_itemRecords is not null) return _itemRecords;
-
+        if (_itemRecords is not null)
+        {
+            _logger.Information("Returning cached item records");
+            return _itemRecords;
+        }
+        
         lock (_dataLock)
         {
-            if (_itemRecords is not null) return _itemRecords;
-            
+            if (_itemRecords is not null)
+            {
+                _logger.Information("Returning cached item records");
+                return _itemRecords;
+            }
+
+            _logger.Information("Item records not cached creating new records");
             _itemRecords = Data.Items.Records.Select(HappyItemRecord.FromItemRecord).ToArray();
             return _itemRecords;
         }
@@ -50,17 +60,17 @@ public class MgscDataTools(IModConstants modConstants, ILogger logger)
     
     public void ExportItemRecords()
     {
-        logger.Information("Exporting data records");
+        _logger.Information("Exporting data records");
         
         if (File.Exists(FilePath))
         {
-            logger.Information("File already existed deletings old file");
+            _logger.Information("File already existed deleting old file");
             File.Delete(FilePath);
         }
 
         if (Path.GetDirectoryName(FilePath) is not {} directoryName)
         {
-            logger.Error("Unable to get directory path from file path `{FilePath}`", FilePath);
+            _logger.Error("Unable to get directory path from file path `{FilePath}`", FilePath);
             return;
         }
 

@@ -9,7 +9,7 @@ public record SortConfig() : IConfig
     public string FileName => "SortConfig";
 
     [JsonConstructor]
-    public SortConfig(Boolean debugLogMatches, KeyCode sortToTabsKey, KeyCode tabSortKey) : this()
+    public SortConfig(bool debugLogMatches, KeyCode sortToTabsKey, KeyCode tabSortKey) : this()
     {
         DebugLogMatches = debugLogMatches;
         SortToTabsKey = sortToTabsKey;

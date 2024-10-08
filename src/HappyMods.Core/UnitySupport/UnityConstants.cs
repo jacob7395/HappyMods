@@ -1,9 +1,6 @@
-﻿using System.ComponentModel.Design;
-using System.IO;
-using Microsoft.Extensions.DependencyInjection;
-using UnityEngine;
+﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace HappyMods.Core.Unity;
+namespace HappyMods.Core.UnitySupport;
 
 public record ModConstant(string ModName) : IModConstants
 {

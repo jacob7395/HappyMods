@@ -1,4 +1,4 @@
-﻿namespace HappyMods.Core.Unity;
+﻿namespace HappyMods.Core.UnitySupport;
 
 public interface IModConstants
 {
