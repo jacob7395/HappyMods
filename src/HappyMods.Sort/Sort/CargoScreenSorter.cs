@@ -10,11 +10,13 @@ namespace HappyMods.Sort.Sort;
 public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
 {
     private ILogger _logger = logger.ForContext<CargoScreenSorter>();
-    public bool RecyclingTabAvaliabale(MagnumSpaceship spaceship) => spaceship.HasStoreConstructorDepartment;
+    public bool RecyclingTabAvailable(MagnumSpaceship spaceship) => spaceship.HasStoreConstructorDepartment;
     private void Sort(MagnumCargo magnumCargo, ItemStorage activeTab, SpaceTime spaceTime, 
                       bool sortRecycling)
     {
         var stopwatch = new Stopwatch();
+        stopwatch.Start();
+        
         _logger.Information("Processing full cargo sort, include recycling tab set to {SortRecycling}", sortRecycling);
         
         SortItemTabMappingConfig? tabMappings = configFactory.GetConfig<SortItemTabMappingConfig>();
@@ -24,8 +26,6 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
             _logger.Error("Unable to load tab mappings config file, aborting sort");
             return;
         }
-        
-        _logger.Information("Using tab mapping: {TabMappings}", tabMappings?.ToString());
 
         ItemStorage[] shipStorages = magnumCargo.ShipCargo.ToArray();
 
@@ -65,7 +65,7 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
             int itemCount = cargo.Items.Count;
             int requiredHeight = itemCount / width + 2;
             
-            cargo.Resize(width, requiredHeight);
+            // cargo.Resize(width, requiredHeight);
         }
         
         stopwatch.Stop();
@@ -98,7 +98,6 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
         }
 
         shipStorages[targetTabIndex].ExpandHeightAndPutItem(item);
-        activeTab.Remove(item);
 
         _logger.Debug("Item {ItemId} moved to tab {TargetTabIndex}", item.Id, targetTabIndex + 1);
         return true;
@@ -147,22 +146,24 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
             
         if (ItemPreviouslyUnderPointer is null) return;
 
-        bool recyclingTabAvaliabale = RecyclingTabAvaliabale(magnumSpaceship);
+        bool recyclingTabAvailable = RecyclingTabAvailable(magnumSpaceship);
         
-        logger.Debug("Pointer is in an item {RecyclingTabAvaliabale}", recyclingTabAvaliabale);
-        
-        if (Input.GetMouseButtonUp(2) && recyclingTabAvaliabale)
+        if (Input.GetMouseButtonUp(2) && recyclingTabAvailable && !magnumCargo.RecyclingInProgress)
         {
+            logger.Information("Pointer is in an item {RecyclingTabAvailable}", recyclingTabAvailable);
+            
             BasePickupItem item = ItemPreviouslyUnderPointer.Item;
             
-            logger.Debug("Handeling move item to recycleing for {ItemId}", item.Id);
+            logger.Information("Handling move item to recycling for {ItemId}", item.Id);
             
             if (!magnumCargo.RecyclingStorage.TryPutItem(item, CellPosition.Zero))
             {
                 logger.Warning("Failed to add item to recycling tab");
                 return;
             }
-            
+
+            ItemPreviouslyUnderPointer.IsPointerInside = false;
+            ItemPreviouslyUnderPointer = null;           
             screenWithShipCargo.RefreshView();
         }
     }
