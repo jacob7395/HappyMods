@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using HappyMods.Core.UnitySupport;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -18,46 +19,49 @@ public static class SerilogConfiguration
     {
         var directory = Path.Combine($"{modConstant.ModFolder}", "logs");
         
-        string[] fileNames = Directory.GetFiles(directory, "*.log");
-        Dictionary<DateTime, string> logFile = new();
-        
-        foreach (string fileNameWithType in fileNames)
-        {
-            var filename = fileNameWithType.Split('.')[0];
+        string[] logFiles = Directory.GetFiles(directory, "*.log")
+                                     .Select(Path.GetFileName)
+                                     .Where(f => Regex.Match(f, @"\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}.log").Success)
+                                     .ToArray();
 
-            if (DateTime.TryParse(filename, out DateTime dateTime))
-            {
-                logFile[dateTime] = fileNameWithType;
-            }
-        }
-
-        DeleteOldFiles(logFile, directory);
+        DeleteOldFiles(logFiles, directory);
 
         string logFIlePath = Path.Combine(directory, $"{DateTime.Now:yyyy'-'MM'-'dd'T'HH'-'mm'-'ss}.log");
-        
+
         Debug.Log($"[Happy.Sort] Using log file at path {logFIlePath}");
-        
+
         return logFIlePath;
     }
-    
-    private static void DeleteOldFiles(Dictionary<DateTime, string> logFile, string directory)
-    {
 
-        if (logFile.Count > 5)
+    private static void DeleteOldFiles(string[] logFile, string directory)
+    {
+        try
         {
-            foreach (var pair in logFile.OrderByDescending(pair => pair.Key)
-                                        .Skip(5))
+            Debug.Log($"Log file could is {logFile.Length}");
+            if (logFile.Length > 5)
             {
-                File.Delete(Path.Combine(directory, pair.Value));
+                foreach (var file in logFile.OrderByDescending(l => l)
+                                            .Skip(5))
+                {
+                    string combine = Path.Combine(directory,file);
+                    Debug.Log($"[Happy.Sort] Deleting old log file {combine}");
+                    File.Delete(combine);
+                }
             }
         }
+        catch (Exception e)
+        {
+            Debug.LogWarning("[Happy.Sort] Error thrown while trying to delete old log files");
+            Debug.LogException(e);
+            throw;
+        }
+        
     }
 
     public static Logger CreateLogger(IModConstants modConstant, string modPrefix)
     {
         return new LoggerConfiguration()
-               .WriteTo.File(
-                   GetLogFIlePath(modConstant),
+               .WriteTo.File(GetLogFIlePath(modConstant),
                    outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
                .WriteTo.UnitySink(modPrefix)
                .Enrich.FromLogContext()
@@ -87,19 +91,18 @@ public class UnityLogSink(string modPrefix) : ILogEventSink
                 break;
         }
 
-        if (logEvent.Exception is {} exception)
-            Debug.LogException(exception);
+        if (logEvent.Exception is {} exception) Debug.LogException(exception);
     }
 }
 
 public static class SerilogExtensions
 {
     private static readonly ConcurrentDictionary<Type, ILogger> LogCache = new();
-    
+
     public static ILogger GetLogger<T>(this ServiceProvider provider)
     {
         if (LogCache.TryGetValue(typeof(T), out var logger)) return logger;
-        
+
         return LogCache[typeof(T)] = provider.GetRequiredService<ILogger>().ForContext<T>();
     }
 

@@ -6,6 +6,15 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <Target Name="CopyOutput" AfterTargets="Build">
+        <ItemGroup>
+            <DllFiles Include="$(TargetDir)*.dll" />
+        </ItemGroup>
+        <Copy SourceFiles="@(DllFiles)"
+              DestinationFolder="C:\Program Files (x86)\Steam\steamapps\workshop\content\2059170\3342973875"
+              SkipUnchangedFiles="false"/>
+    </Target>
+    
     <ItemGroup>
         <PackageReference Include="BepInEx.AssemblyPublicizer.msbuild" Version="0.4.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
