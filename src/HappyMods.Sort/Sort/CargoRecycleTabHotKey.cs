@@ -6,41 +6,54 @@ public class CargoRecycleTabHotKey(ILogger logger)
 {
     private readonly ILogger _logger = logger.ForContext<CargoRecycleTabHotKey>();
     public bool RecyclingTabAvailable(MagnumSpaceship spaceship) => spaceship.HasStoreConstructorDepartment;
-    
-    private ItemSlot? ItemPreviouslyUnderPointer;
+
+    private ItemSlot? _itemPreviouslyUnderPointer;
     private ItemSlot? SearchForItemUnderPointer(ScreenWithShipCargo screenWithShipCargo) => screenWithShipCargo._cargoItemGrid._slots.FirstOrDefault(s => s.IsPointerInside);
-    public void HandleUnderPointerHotKeys(ScreenWithShipCargo screenWithShipCargo, MagnumCargo magnumCargo, MagnumSpaceship magnumSpaceship)
+
+    public void HandleUnderPointerHotKeys(ScreenWithShipCargo screenWithShipCargo,
+                                          MagnumCargo magnumCargo,
+                                          MagnumSpaceship magnumSpaceship)
     {
+        bool actionRequired = Input.GetMouseButtonUp(2);
         
-        if (ItemPreviouslyUnderPointer?.IsPointerInside == false)
+        if (_itemPreviouslyUnderPointer?.IsPointerInside == false)
         {
-            _logger.Debug("Pointer no longer in item");
-            ItemPreviouslyUnderPointer = null;
+            _itemPreviouslyUnderPointer = null;
         }
 
-        ItemPreviouslyUnderPointer ??= SearchForItemUnderPointer(screenWithShipCargo);
-            
-        if (ItemPreviouslyUnderPointer is null) return;
+        _itemPreviouslyUnderPointer ??= SearchForItemUnderPointer(screenWithShipCargo);
+
+        if (_itemPreviouslyUnderPointer is null)
+        {
+            if(actionRequired) logger.Warning("Unable to complete action as item not found under pointer");
+            return;
+        }
 
         bool recyclingTabAvailable = RecyclingTabAvailable(magnumSpaceship);
         
-        if (Input.GetMouseButtonUp(2) && recyclingTabAvailable && !magnumCargo.RecyclingInProgress)
+        if (actionRequired && recyclingTabAvailable && !magnumCargo.RecyclingInProgress)
         {
-            _logger.Information("Pointer is in an item {RecyclingTabAvailable}", recyclingTabAvailable);
-            
-            BasePickupItem item = ItemPreviouslyUnderPointer.Item;
-            
-            _logger.Information("Handling move item to recycling for {ItemId}", item.Id);
-            
-            if (!magnumCargo.RecyclingStorage.TryPutItem(item, CellPosition.Zero))
-            {
-                _logger.Warning("Failed to add item to recycling tab");
-                return;
-            }
-
-            ItemPreviouslyUnderPointer.IsPointerInside = false;
-            ItemPreviouslyUnderPointer = null;           
-            screenWithShipCargo.RefreshView();
+            MoveItemToRecycling(_itemPreviouslyUnderPointer, magnumCargo, screenWithShipCargo);
         }
+    }
+
+    private void MoveItemToRecycling(ItemSlot itemSlot, MagnumCargo magnumCargo,
+                                     ScreenWithShipCargo screenWithShipCargo)
+    {
+        BasePickupItem item = itemSlot.Item;
+
+        _logger.Information("Handling move item to recycling for {ItemId}", item.Id);
+
+        if (!magnumCargo.RecyclingStorage.TryPutItem(item, CellPosition.Zero))
+        {
+            _logger.Warning("Failed to add item to recycling tab");
+            return;
+        }
+
+        itemSlot.IsPointerInside = false;
+
+        if (_itemPreviouslyUnderPointer == itemSlot) _itemPreviouslyUnderPointer = null;
+
+        screenWithShipCargo.RefreshView();
     }
 }

@@ -8,14 +8,24 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HappyMods.Sort.Hooks;
 
+public static class SpaceUpdateAfterGameLoopHook
+{
+
+    [Hook(ModHookType.SpaceUpdateAfterGameLoop)]
+    public static void Execute(IModContext context)
+    {
+        CargoSortHook.CargoSortHookAction(context);
+        CargoRecycleTabHotKeyHook.CargoRecycleTabHotKeyHookAction(context);
+    }
+}
+
 public class CargoSortHook
 {
     public static ServiceProvider Provider => ModServiceProvider.Provider;
     private static ILogger? Logger { get; set; }
     public static CargoScreenSorter? CargoScreenSorter;
-
-    [Hook(ModHookType.SpaceUpdateAfterGameLoop)]
-    public static void SpaceUpdateAfterGameLoop(IModContext context)
+    
+    public static void CargoSortHookAction(IModContext context)
     {
         Logger ??= Provider.GetRequiredService<ILogger>()
                            .ForContext("SourceContext", nameof(CargoSortHook));
@@ -31,7 +41,6 @@ public class CargoSortHook
             catch (Exception e)
             {
                 Logger.Error(e, "Error thrown when trying to process sort loop");
-                throw;
             }
         }
     }

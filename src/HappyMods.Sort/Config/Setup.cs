@@ -23,6 +23,8 @@ public class Setup
         serviceCollection.AddSingleton<MgscDataTools>();
         serviceCollection.AddSingleton<CargoScreenSorter>();
         serviceCollection.AddSingleton<ConfigFactory>();
+        serviceCollection.AddSingleton<CargoRecycleTabHotKey>();
+        serviceCollection.AddSingleton(typeof(IGameState<>), typeof(GameState<>));
         serviceCollection.AddSingleton<ILogger>(s => SerilogConfiguration.CreateLogger(s.GetRequiredService<IModConstants>(), "Sort"));
 
         ModServiceProvider.Provider = serviceCollection.BuildServiceProvider();

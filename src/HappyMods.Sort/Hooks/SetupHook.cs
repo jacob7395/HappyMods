@@ -29,6 +29,7 @@ public static class SetupHook
 
         try
         {
+            StateCache.State = context.State;
             SetupInstance = Setup.Build("Happy.Sort");
         }
         catch (Exception e)
