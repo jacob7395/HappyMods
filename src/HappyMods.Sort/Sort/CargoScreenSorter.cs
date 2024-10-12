@@ -10,16 +10,17 @@ namespace HappyMods.Sort.Sort;
 public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
 {
     private readonly ILogger _logger = logger.ForContext<CargoScreenSorter>();
-    private void Sort(MagnumCargo magnumCargo, ItemStorage activeTab, SpaceTime spaceTime, 
-                      bool sortRecycling)
+    public bool RecyclingTabAvailable(MagnumSpaceship spaceship) => spaceship.HasStoreConstructorDepartment;
+    
+    public void Sort(MagnumCargo magnumCargo, MagnumSpaceship spaceship, SpaceTime spaceTime, bool sortRecycling)
     {
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        
+
         _logger.Information("Processing full cargo sort, include recycling tab set to {SortRecycling}", sortRecycling);
-        
+
         SortItemTabMappingConfig? tabMappings = configFactory.GetConfig<SortItemTabMappingConfig>();
-        
+
         if (tabMappings is null)
         {
             _logger.Error("Unable to load tab mappings config file, aborting sort");
@@ -32,26 +33,31 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
         HashSet<ItemStorage> changedItemStorageTabs = new();
 
         foreach (var (tabIndex, itemStorage, item) in magnumCargo.ShipCargo
-                                                                   .SelectMany((itemStorage, index) => 
-                                                                       itemStorage.Items
-                                                                                  .Select(item => (index, itemStorage, item))
-                                                                                  .ToArray())
-                                                                   .ToArray())
+                                                                 .SelectMany((itemStorage, index) =>
+                                                                     itemStorage.Items
+                                                                                .Select(item => (index, itemStorage, item))
+                                                                                .ToArray())
+                                                                 .ToArray())
         {
-            if (!SortTab(item, tabIndex, itemStorage, tabMappings, shipStorages)) { continue; }
-            
+            if (!SortItemInternal(item, tabMappings, shipStorages))
+            {
+                continue;
+            }
+
             changedItemStorageTabs.Add(itemStorage);
             totalSortCount++;
         }
 
         int recyclingMoved = 0;
-        var recyclingStorage = magnumCargo.RecyclingStorage;
-        if (sortRecycling && magnumCargo.RecyclingInProgress == false)
+        if (sortRecycling && RecyclingTabAvailable(spaceship) && magnumCargo.RecyclingInProgress == false)
         {
             foreach (var item in magnumCargo.RecyclingStorage.Items.ToList())
             {
-                if (!SortTab(item, 8, recyclingStorage, tabMappings, shipStorages)) { continue; }
-            
+                if (!SortItemInternal(item, tabMappings, shipStorages))
+                {
+                    continue;
+                }
+
                 recyclingMoved++;
             }
         }
@@ -60,30 +66,43 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
         {
             cargo.SortWithExpandByTypeAndName(spaceTime);
         }
-        
+
         stopwatch.Stop();
         _logger.Information("Sorted {ItemCount} for cargo tabs in {StopwatchElapsed}", totalSortCount, stopwatch.Elapsed);
-        
-        if(sortRecycling) _logger.Information("Moved {ItemCount} from recycling", recyclingMoved);
+
+        if (sortRecycling) _logger.Information("Moved {ItemCount} from recycling", recyclingMoved);
     }
-    
-    private bool SortTab(BasePickupItem item, int tabIndex, ItemStorage activeTab,
-                         SortItemTabMappingConfig? tabMappings, 
-                         ItemStorage[] shipStorages)
+
+    public bool SortItem(BasePickupItem item, MagnumCargo magnumCargo)
+    {
+        SortItemTabMappingConfig? tabMappings = configFactory.GetConfig<SortItemTabMappingConfig>();
+
+        if (tabMappings is null)
+        {
+            _logger.Error("Unable to load tab mappings config file, aborting sort");
+            return false;
+        }
+
+        return SortItemInternal(item, tabMappings, magnumCargo.ShipCargo.ToArray());
+    }
+
+    public bool SortItemInternal(BasePickupItem item,
+                                 SortItemTabMappingConfig? tabMappings,
+                                 ItemStorage[] shipStorages)
     {
         if (tabMappings?.TabMaps.Match(item) is not {} matchTab)
         {
             BasePickupItemRecord record = item.Record<BasePickupItemRecord>();
             HappyItemRecord happyItemRecord = HappyItemRecord.FromItemRecord(record);
-            
+
             _logger.Information("Item {Id}, {Name}, {SubType} not found in config", happyItemRecord.Id, happyItemRecord.Type, happyItemRecord.SubType);
             matchTab = 7;
         }
 
         int targetTabIndex = matchTab - 1;
 
-        if (targetTabIndex == tabIndex) return false;
-            
+        if (shipStorages[targetTabIndex] == item.Storage) return false;
+
         if (matchTab > shipStorages.Length || targetTabIndex < 0)
         {
             _logger.Information("Item {ItemId} has got invalid target tab {MatchTab}, sending item to final tab", item.Id, matchTab);
@@ -96,23 +115,24 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
         return true;
     }
 
-    public void ProcessSortLoop(ScreenWithShipCargo instance, MagnumCargo magnumCargo, State state)
+    public void ProcessSortLoop(ScreenWithShipCargo instance, MagnumSpaceship spaceship, 
+                                MagnumCargo magnumCargo, State state)
     {
-        if (!instance.gameObject.activeSelf || 
-            SharedUi.ManageSkullWindow.IsViewActive || 
+        if (!instance.gameObject.activeSelf ||
+            SharedUi.ManageSkullWindow.IsViewActive ||
             SharedUi.NarrativeTextScreen.IsViewActive)
         {
             _logger.Information("No cargo windows active");
             return;
         }
-        
-        if (state.Get<SpaceTime>() is not { } spaceTime ||
+
+        if (state.Get<SpaceTime>() is not {} spaceTime ||
             configFactory.GetConfig<SortConfig>() is not {} config) return;
-        
+
         if (Input.GetKeyUp(KeyCode.P))
         {
             bool sortRecycling = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.LeftShift);
-            Sort(magnumCargo, instance.GetActualFloorItems(), spaceTime, sortRecycling);
+            Sort(magnumCargo, spaceship, spaceTime, sortRecycling);
             instance.RefreshView();
         }
 

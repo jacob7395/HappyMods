@@ -2,7 +2,7 @@
 
 namespace HappyMods.Sort.Sort;
 
-public class CargoRecycleTabHotKey(ILogger logger)
+public class CargoRecycleTabHotKey(CargoScreenSorter sorter, ILogger logger)
 {
     private readonly ILogger _logger = logger.ForContext<CargoRecycleTabHotKey>();
     public bool RecyclingTabAvailable(MagnumSpaceship spaceship) => spaceship.HasStoreConstructorDepartment;
@@ -29,12 +29,36 @@ public class CargoRecycleTabHotKey(ILogger logger)
             return;
         }
 
-        bool recyclingTabAvailable = RecyclingTabAvailable(magnumSpaceship);
-        
-        if (actionRequired && recyclingTabAvailable && !magnumCargo.RecyclingInProgress)
+        var cargoTab = magnumCargo.RecyclingStorage;
+
+        switch (actionRequired)
         {
-            MoveItemToRecycling(_itemPreviouslyUnderPointer, magnumCargo, screenWithShipCargo);
+            case true when _itemPreviouslyUnderPointer.Storage == cargoTab:
+                MoveItemToCargo(_itemPreviouslyUnderPointer, magnumCargo, screenWithShipCargo);
+                break;
+            case true when RecyclingTabAvailable(magnumSpaceship) && !magnumCargo.RecyclingInProgress: MoveItemToRecycling(_itemPreviouslyUnderPointer, magnumCargo, screenWithShipCargo);
+                break;
         }
+    }
+    
+    private void MoveItemToCargo(ItemSlot itemSlot, MagnumCargo magnumCargo,
+                                 ScreenWithShipCargo screenWithShipCargo)
+    {
+        BasePickupItem item = itemSlot.Item;
+
+        _logger.Information("Handling move item to recycling for {ItemId}", item.Id);
+
+        if (!sorter.SortItem(item, magnumCargo))
+        {
+            _logger.Warning("Failed to move item back into cargo");
+            return;
+        }
+
+        itemSlot.IsPointerInside = false;
+
+        if (_itemPreviouslyUnderPointer == itemSlot) _itemPreviouslyUnderPointer = null;
+
+        screenWithShipCargo.RefreshView();
     }
 
     private void MoveItemToRecycling(ItemSlot itemSlot, MagnumCargo magnumCargo,
