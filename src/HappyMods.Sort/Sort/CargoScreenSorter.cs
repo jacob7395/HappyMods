@@ -9,8 +9,7 @@ namespace HappyMods.Sort.Sort;
 
 public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
 {
-    private ILogger _logger = logger.ForContext<CargoScreenSorter>();
-    public bool RecyclingTabAvailable(MagnumSpaceship spaceship) => spaceship.HasStoreConstructorDepartment;
+    private readonly ILogger _logger = logger.ForContext<CargoScreenSorter>();
     private void Sort(MagnumCargo magnumCargo, ItemStorage activeTab, SpaceTime spaceTime, 
                       bool sortRecycling)
     {
@@ -60,12 +59,6 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
         foreach (ItemStorage cargo in changedItemStorageTabs)
         {
             cargo.SortWithExpandByTypeAndName(spaceTime);
-
-            int width = cargo.Width;
-            int itemCount = cargo.Items.Count;
-            int requiredHeight = itemCount / width + 2;
-            
-            // cargo.Resize(width, requiredHeight);
         }
         
         stopwatch.Stop();
@@ -128,43 +121,6 @@ public class CargoScreenSorter(ConfigFactory configFactory, ILogger logger)
             _logger.Information("Processing sort");
             instance.GetActualFloorItems().SortWithExpandByTypeAndName(spaceTime);
             instance.RefreshView();
-        }
-    }
-
-    private ItemSlot? ItemPreviouslyUnderPointer;
-    private ItemSlot? SearchForItemUnderPointer(ScreenWithShipCargo screenWithShipCargo) => screenWithShipCargo._cargoItemGrid._slots.FirstOrDefault(s => s.IsPointerInside);
-    public void HandleUnderPointerHotKeys(ScreenWithShipCargo screenWithShipCargo, MagnumCargo magnumCargo, MagnumSpaceship magnumSpaceship)
-    {
-        
-        if (ItemPreviouslyUnderPointer?.IsPointerInside == false)
-        {
-            logger.Debug("Pointer no longer in item");
-            ItemPreviouslyUnderPointer = null;
-        }
-
-        ItemPreviouslyUnderPointer ??= SearchForItemUnderPointer(screenWithShipCargo);
-            
-        if (ItemPreviouslyUnderPointer is null) return;
-
-        bool recyclingTabAvailable = RecyclingTabAvailable(magnumSpaceship);
-        
-        if (Input.GetMouseButtonUp(2) && recyclingTabAvailable && !magnumCargo.RecyclingInProgress)
-        {
-            logger.Information("Pointer is in an item {RecyclingTabAvailable}", recyclingTabAvailable);
-            
-            BasePickupItem item = ItemPreviouslyUnderPointer.Item;
-            
-            logger.Information("Handling move item to recycling for {ItemId}", item.Id);
-            
-            if (!magnumCargo.RecyclingStorage.TryPutItem(item, CellPosition.Zero))
-            {
-                logger.Warning("Failed to add item to recycling tab");
-                return;
-            }
-
-            ItemPreviouslyUnderPointer.IsPointerInside = false;
-            ItemPreviouslyUnderPointer = null;           
-            screenWithShipCargo.RefreshView();
         }
     }
 }
